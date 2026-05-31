@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FinFlow">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>FinFlow — Учёт финансов</title>
+<script src="https://accounts.google.com/gsi/client" async></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0a0a0f;
+  --bg2: #10101a;
+  --bg3: #16162a;
+  --bg4: #1c1c33;
+  --card: #12121f;
+  --card2: #1a1a2e;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --cyan: #00e5ff;
+  --cyan2: #00b8d4;
+  --green: #00e676;
+  --red: #ff1744;
+  --yellow: #ffd600;
+  --purple: #7c4dff;
+  --orange: #ff6d00;
+  --pink: #f50057;
+  --text: #f0f0ff;
+  --text2: rgba(240,240,255,0.6);
+  --text3: rgba(240,240,255,0.35);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  --glow: 0 0 20px rgba(0,229,255,0.25);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html { background: var(--bg); }
+
+body {
+  font-family: 'Sora', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+#loader {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 9999; transition: opacity 0.5s;
+}
+#loader .logo-wrap { position: relative; }
+#loader .logo-ring {
+  width: 80px; height: 80px;
+  border: 2px solid transparent;
+  border-top-color: var(--cyan);
+  border-right-color: var(--cyan);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+#loader .logo-inner {
+  position: absolute; inset: 8px;
+  background: var(--bg3); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,10,15,0.9);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+#header .logo { font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+#header .logo span { color: var(--cyan); }
+.icon-btn {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
+}
+.icon-btn:active { transform: scale(0.92); }
+
+#nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  z-index: 100;
+  background: rgba(10,10,15,0.95);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 10px 4px 8px;
+  gap: 4px; cursor: pointer;
+  transition: all 0.2s; position: relative;
+}
+.nav-item .nav-icon { font-size: 20px; transition: transform 0.2s; }
+.nav-item .nav-label { font-size: 10px; color: var(--text3); font-weight: 500; transition: color 0.2s; }
+.nav-item.active .nav-label { color: var(--cyan); }
+.nav-item.active .nav-icon { transform: scale(1.15); }
+.nav-item.active::before {
+  content: '';
+  position: absolute; top: 0; left: 20%; right: 20%;
+  height: 2px; background: var(--cyan);
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 0 8px var(--cyan);
+}
+.nav-item.add-btn .nav-icon {
+  width: 46px; height: 46px; border-radius: 14px;
+  background: var(--cyan);
+  color: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 700;
+  box-shadow: 0 0 20px rgba(0,229,255,0.4);
+  transition: all 0.2s;
+  margin-top: -8px;
+}
+
+.page { display: none; padding: 16px 16px 80px; animation: fadeUp 0.3s ease; }
+.page.active { display: block; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  transition: border-color 0.2s;
+}
+
+.balance-hero {
+  background: linear-gradient(135deg, #0d0d1f 0%, #0a1628 50%, #0d0a1f 100%);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px 20px 20px;
+  margin-bottom: 16px;
+  position: relative; overflow: hidden;
+}
+.balance-label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--text3); font-family: 'Space Mono', monospace; }
+.balance-amount { font-size: 36px; font-weight: 700; margin: 6px 0; line-height: 1; font-family: 'Space Mono', monospace; }
+.balance-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.bstat { background: rgba(255,255,255,0.04); border-radius: 12px; padding: 12px; }
+.bstat-label { font-size: 10px; color: var(--text3); text-transform: uppercase; }
+.bstat-val { font-size: 18px; font-weight: 700; margin-top: 4px; font-family: 'Space Mono', monospace; }
+.bstat-val.inc { color: var(--green); }
+.bstat-val.exp { color: var(--red); }
+
+.quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+.qa-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 6px;
+  cursor: pointer; transition: all 0.2s;
+}
+.qa-btn:active { transform: scale(0.93); }
+
+.sec-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.sec-title h3 { font-size: 14px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
+.sec-title a { font-size: 12px; color: var(--cyan); text-decoration: none; }
+
+.accounts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.account-card { border-radius: var(--radius); padding: 16px; cursor: pointer; transition: all 0.2s; background: var(--card2); border: 1px solid var(--border); }
+
+.tx-list { display: flex; flex-direction: column; gap: 2px; }
+.tx-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px; background: var(--card); border-radius: 12px; cursor: pointer;
+  margin-bottom: 4px;
+}
+.tx-item:active { transform: scale(0.98); }
+.tx-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.tx-info { flex: 1; min-width: 0; }
+.tx-name { font-size: 14px; font-weight: 500; }
+.tx-meta { font-size: 11px; color: var(--text3); margin-top: 2px; display: flex; gap: 6px; flex-wrap: wrap; }
+.tx-amount { font-size: 15px; font-weight: 700; font-family: 'Space Mono', monospace; }
+.tx-amount.income { color: var(--green); }
+.tx-amount.expense { color: var(--red); }
+.tx-amount.transfer { color: var(--cyan); }
+
+.chart-wrap { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+.chart-wrap canvas { max-height: 180px !important; height: 180px !important; width: 100% !important; }
+
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 200;
+  display: none; align-items: flex-end; justify-content: center;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 24px 24px 0 0; padding: 20px 20px 32px;
+  width: 100%; max-width: 600px; max-height: 90dvh; overflow-y: auto;
+}
+.modal-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 6px; display: block; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px 14px; color: var(--text); font-size: 15px; outline: none;
+}
+.form-input:focus, .form-select:focus { border-color: var(--cyan); }
+
+.type-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+.type-tab {
+  flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--bg3); color: var(--text2); font-weight: 600; text-align: center; cursor: pointer;
+}
+.type-tab.active-income { background: rgba(0,230,118,0.15); border-color: var(--green); color: var(--green); }
+.type-tab.active-expense { background: rgba(255,23,68,0.15); border-color: var(--red); color: var(--red); }
+.type-tab.active-transfer { background: rgba(0,229,255,0.15); border-color: var(--cyan); color: var(--cyan); }
+
+.cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.cat-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 10px 4px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg3); cursor: pointer;
+}
+.cat-btn.selected { border-color: var(--cyan); background: rgba(0,229,255,0.1); }
+
+.btn { width: 100%; padding: 14px; border-radius: 14px; font-weight: 700; cursor: pointer; border: none; text-align: center; }
+.btn-primary { background: var(--cyan); color: var(--bg); }
+.btn-secondary { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+.btn-danger { background: rgba(255,23,68,0.15); color: var(--red); }
+.btn-row { display: flex; gap: 10px; margin-top: 16px; }
+.btn-row .btn { flex: 1; }
+
+.filter-row { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 14px; }
+.filter-chip { padding: 7px 14px; border-radius: 20px; font-size: 12px; background: var(--bg3); border: 1px solid var(--border); cursor: pointer; }
+.filter-chip.active { background: rgba(0,229,255,0.15); border-color: var(--cyan); color: var(--cyan); }
+
+.debt-item {
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  padding: 14px; margin-bottom: 10px; cursor: pointer;
+}
+.debt-status { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: bold; }
+.debt-status.owed { background: rgba(255,23,68,0.2); color: var(--red); }
+.debt-status.borrow { background: rgba(0,230,118,0.2); color: var(--green); }
+.debt-status.paid { background: rgba(255,255,255,0.1); color: var(--text3); }
+
+.toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: 12px;
+  padding: 10px 18px; font-size: 13px; color: var(--text); opacity: 0; transition: 0.2s; z-index: 500;
+}
+.toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="loader"><div class="logo-wrap"><div class="logo-ring"></div><div class="logo-inner">💸</div></div><h2>Fin<span>Flow</span></h2></div>
+
+<div id="header">
+  <div class="logo">Fin<span>Flow</span></div>
+  <div class="header-actions">
+    <button class="icon-btn" onclick="showPage('settings')">⚙️</button>
+  </div>
+</div>
+
+<!-- PAGES -->
+<div id="page-home" class="page active">
+  <div class="balance-hero">
+    <div class="balance-label">Общий баланс</div>
+    <div class="balance-amount" id="total-balance">₸ 0</div>
+    <div class="balance-stats">
+      <div class="bstat"><div class="bstat-label">⬆️ Доходы</div><div class="bstat-val inc" id="month-income">₸ 0</div></div>
+      <div class="bstat"><div class="bstat-label">⬇️ Расходы</div><div class="bstat-val exp" id="month-expense">₸ 0</div></div>
+    </div>
+  </div>
+  <div class="quick-actions">
+    <div class="qa-btn" onclick="openAddTx('expense')"><div class="qa-icon">💸</div><div class="qa-label">Расход</div></div>
+    <div class="qa-btn" onclick="openAddTx('income')"><div class="qa-icon">💰</div><div class="qa-label">Доход</div></div>
+    <div class="qa-btn" onclick="openAddTx('transfer')"><div class="qa-icon">🔄</div><div class="qa-label">Перевод</div></div>
+    <div class="qa-btn" onclick="showPage('debts')"><div class="qa-icon">📝</div><div class="qa-label">Долги</div></div>
+  </div>
+  <div class="sec-title"><h3>📂 Счета</h3><a href="#" onclick="openAccountsModal()">+ добавить</a></div>
+  <div class="accounts-grid" id="accounts-grid"></div>
+  <div class="chart-wrap"><div class="chart-title">📊 Расходы за 7 дней</div><canvas id="chart-mini" height="150"></canvas></div>
+  <div class="sec-title"><h3>⏱ Последние</h3><a href="#" onclick="showPage('transactions')">все →</a></div>
+  <div class="tx-list" id="recent-list"></div>
+</div>
+
+<div id="page-transactions" class="page">
+  <input type="text" class="form-input" id="tx-search" placeholder="Поиск..." oninput="renderTransactions()" style="margin-bottom:12px">
+  <div class="filter-row" id="tx-filters">
+    <div class="filter-chip active" onclick="setTxFilter('all',this)">Все</div>
+    <div class="filter-chip" onclick="setTxFilter('expense',this)">Расходы</div>
+    <div class="filter-chip" onclick="setTxFilter('income',this)">Доходы</div>
+  </div>
+  <div id="tx-list-full"></div>
+</div>
+
+<div id="page-analytics" class="page">
+  <div class="stats-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px">
+    <div class="card"><div class="stat-label">Доходы</div><div class="stat-val" id="an-income" style="color:var(--green)">₸ 0</div></div>
+    <div class="card"><div class="stat-label">Расходы</div><div class="stat-val" id="an-expense" style="color:var(--red)">₸ 0</div></div>
+  </div>
+  <div class="chart-wrap"><div class="chart-title">📈 Доходы vs Расходы</div><canvas id="chart-main" height="180"></canvas></div>
+  <div class="chart-wrap"><div class="chart-title">🍩 По категориям</div><canvas id="chart-donut" height="200"></canvas></div>
+</div>
+
+<div id="page-debts" class="page">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+    <h2 style="font-size:18px">📝 Долги и займы</h2>
+    <button class="btn btn-primary btn-sm" style="width:auto; padding:8px 16px" onclick="openDebtModal()">+ Добавить</button>
+  </div>
+  <div id="debts-list"></div>
+  <div class="card" style="margin-top:16px; text-align:center">
+    <div style="font-size:13px; color:var(--text2)">💰 Общий долг: <span id="total-debt" style="color:var(--red); font-weight:700">0</span></div>
+    <div style="font-size:13px; color:var(--text2)">💸 Мне должны: <span id="total-owed-to-me" style="color:var(--green); font-weight:700">0</span></div>
+  </div>
+</div>
+
+<div id="page-settings" class="page">
+  <h2 style="margin-bottom:20px">⚙️ Настройки</h2>
+  <div class="settings-item" onclick="openProfileModal()" style="background:var(--card); padding:14px; border-radius:12px; margin-bottom:8px">
+    <strong>👤 Профиль и валюта</strong>
+  </div>
+  <div class="settings-item" onclick="exportCSV()" style="background:var(--card); padding:14px; border-radius:12px; margin-bottom:8px">
+    <strong>📤 Экспорт CSV</strong>
+  </div>
+  <div class="settings-item" onclick="clearAllData()" style="background:var(--card); padding:14px; border-radius:12px; margin-top:20px">
+    <strong style="color:var(--red)">🗑️ Очистить все данные</strong>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav id="nav">
+  <div class="nav-item active" onclick="showPage('home')" data-page="home"><div class="nav-icon">🏠</div><div class="nav-label">Главная</div></div>
+  <div class="nav-item" onclick="showPage('transactions')" data-page="transactions"><div class="nav-icon">📋</div><div class="nav-label">Операции</div></div>
+  <div class="nav-item add-btn" onclick="openAddTx('expense')"><div class="nav-icon">+</div><div class="nav-label">Добавить</div></div>
+  <div class="nav-item" onclick="showPage('analytics')" data-page="analytics"><div class="nav-icon">📊</div><div class="nav-label">Аналитика</div></div>
+  <div class="nav-item" onclick="showPage('debts')" data-page="debts"><div class="nav-icon">📝</div><div class="nav-label">Долги</div></div>
+</nav>
+
+<!-- MODALS -->
+<div class="modal-backdrop" id="modal-add"><div class="modal"><div class="modal-title">Новая операция</div>
+  <div class="type-tabs"><div class="type-tab active-expense" onclick="setTxType('expense',this)">⬇️ Расход</div><div class="type-tab" onclick="setTxType('income',this)">⬆️ Доход</div><div class="type-tab" onclick="setTxType('transfer',this)">🔄 Перевод</div></div>
+  <div class="form-group"><input type="number" class="form-input" id="tx-amount" placeholder="Сумма" autofocus></div>
+  <div id="cat-group"><div class="cat-grid" id="cat-grid"></div></div>
+  <div class="form-group"><input type="text" class="form-input" id="tx-desc" placeholder="Описание"></div>
+  <div class="form-group"><select class="form-select" id="tx-account"></select></div>
+  <div id="transfer-to-group" style="display:none"><div class="form-group"><select class="form-select" id="tx-account-to"></select></div></div>
+  <div class="form-group"><input type="date" class="form-input" id="tx-date"></div>
+  <div class="btn-row"><button class="btn btn-secondary" onclick="closeModal('modal-add')">Отмена</button><button class="btn btn-primary" onclick="saveTx()">Сохранить</button></div>
+</div></div>
+
+<div class="modal-backdrop" id="modal-accounts"><div class="modal"><div class="modal-title">Счёт</div>
+  <div class="form-group"><input type="text" class="form-input" id="acc-name" placeholder="Название"></div>
+  <div class="form-group"><select class="form-select" id="acc-type"><option value="card">💳 Карта</option><option value="cash">💵 Наличные</option></select></div>
+  <div class="form-group"><input type="number" class="form-input" id="acc-balance" placeholder="Баланс"></div>
+  <div class="btn-row"><button class="btn btn-secondary" onclick="closeModal('modal-accounts')">Отмена</button><button class="btn btn-primary" onclick="saveAccount()">Добавить</button></div>
+</div></div>
+
+<div class="modal-backdrop" id="modal-debt"><div class="modal"><div class="modal-title">Долг / Займ</div>
+  <div class="form-group"><select class="form-select" id="debt-type"><option value="borrow">Мне должны (занял им)</option><option value="owe">Я должен (взял у них)</option></select></div>
+  <div class="form-group"><input type="text" class="form-input" id="debt-person" placeholder="Кому / От кого"></div>
+  <div class="form-group"><input type="number" class="form-input" id="debt-amount" placeholder="Сумма"></div>
+  <div class="form-group"><input type="date" class="form-input" id="debt-date"></div>
+  <div class="form-group"><input type="text" class="form-input" id="debt-note" placeholder="Примечание"></div>
+  <div class="btn-row"><button class="btn btn-secondary" onclick="closeModal('modal-debt')">Отмена</button><button class="btn btn-primary" onclick="saveDebt()">Сохранить</button></div>
+</div></div>
+
+<div class="modal-backdrop" id="modal-profile"><div class="modal"><div class="modal-title">Профиль</div>
+  <div class="form-group"><input type="text" class="form-input" id="profile-name" placeholder="Имя"></div>
+  <div class="form-group"><select class="form-select" id="profile-currency"><option value="₸">₸ Тенге</option><option value="$">$ Доллар</option><option value="€">€ Евро</option></select></div>
+  <div class="btn-row"><button class="btn btn-secondary" onclick="closeModal('modal-profile')">Отмена</button><button class="btn btn-primary" onclick="saveProfile()">Сохранить</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// STATE
+let state = {
+  transactions: [],
+  accounts: [],
+  debts: [],
+  profile: { name: '', currency: '₸' }
+};
+
+// CATEGORIES
+const CATEGORIES = {
+  expense: [
+    { id:'food', emoji:'🍔', name:'Еда' }, { id:'transport', emoji:'🚗', name:'Транспорт' },
+    { id:'shopping', emoji:'🛍️', name:'Покупки' }, { id:'entertainment', emoji:'🎮', name:'Развлечения' },
+    { id:'subscriptions', emoji:'📱', name:'Подписки' }, { id:'debts', emoji:'📝', name:'Долги/Возврат' },
+    { id:'other', emoji:'📦', name:'Другое' }
+  ],
+  income: [
+    { id:'salary', emoji:'💼', name:'Зарплата' }, { id:'freelance', emoji:'💻', name:'Фриланс' },
+    { id:'gift', emoji:'🎁', name:'Подарок' }, { id:'other_inc', emoji:'💵', name:'Другое' }
+  ]
+};
+const CAT_COLORS = { food:'#ff6d00', transport:'#00b8d4', shopping:'#f50057', entertainment:'#7c4dff', subscriptions:'#aa00ff', debts:'#ffab00', other:'#607d8b', salary:'#00e676', freelance:'#00e5ff', gift:'#ff4081', other_inc:'#888' };
+
+function uid() { return Date.now() + '-' + Math.random().toString(36).substr(2, 6); }
+function save() { localStorage.setItem('finflow_data', JSON.stringify(state)); }
+function load() {
+  const raw = localStorage.getItem('finflow_data');
+  if (raw) Object.assign(state, JSON.parse(raw));
+  if (!state.accounts.length) state.accounts = [{ id:uid(), name:'Основная карта', type:'card', balance:250000, color:'#00e5ff' }, { id:uid(), name:'Наличные', type:'cash', balance:50000, color:'#00e676' }];
+  if (!state.debts) state.debts = [];
+  if (!state.profile.currency) state.profile.currency = '₸';
+  save();
+}
+
+function fmt(n) { return state.profile.currency + ' ' + Math.round(n).toLocaleString('ru'); }
+function formatDate(d) { return new Date(d).toLocaleDateString('ru'); }
+
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+page)?.classList.add('active');
+  document.querySelectorAll('.nav-item[data-page]').forEach(n => n.classList.remove('active'));
+  const nav = document.querySelector(`.nav-item[data-page="${page}"]`);
+  if (nav) nav.classList.add('active');
+  if (page === 'home') renderHome();
+  if (page === 'transactions') renderTransactions();
+  if (page === 'analytics') renderAnalytics();
+  if (page === 'debts') renderDebts();
+}
+
+// HOME
+function renderHome() {
+  const now = new Date();
+  const totalBalance = state.accounts.reduce((s,a) => s + a.balance, 0);
+  document.getElementById('total-balance').textContent = fmt(totalBalance);
+  
+  const monthTx = state.transactions.filter(t => new Date(t.date).getMonth() === now.getMonth());
+  const income = monthTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const expense = monthTx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  document.getElementById('month-income').textContent = fmt(income);
+  document.getElementById('month-expense').textContent = fmt(expense);
+  
+  const grid = document.getElementById('accounts-grid');
+  grid.innerHTML = state.accounts.map(acc => `<div class="account-card" style="border-left:4px solid ${acc.color}"><div class="acc-name">${acc.name}</div><div class="acc-balance">${fmt(acc.balance)}</div></div>`).join('');
+  
+  const recent = [...state.transactions].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,6);
+  document.getElementById('recent-list').innerHTML = recent.map(t => `<div class="tx-item" onclick="openTxDetail('${t.id}')"><div class="tx-icon">${CATEGORIES[t.type==='expense'?'expense':'income'].find(c=>c.id===t.category)?.emoji||'💸'}</div><div class="tx-info"><div class="tx-name">${t.description||'Без названия'}</div><div class="tx-meta">${formatDate(t.date)}</div></div><div class="tx-amount ${t.type}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</div></div>`).join('');
+  
+  renderMiniChart();
+}
+
+let miniChart;
+function renderMiniChart() {
+  const ctx = document.getElementById('chart-mini').getContext('2d');
+  const last7 = [];
+  for(let i=6;i>=0;i--) { let d=new Date(); d.setDate(d.getDate()-i); let sum=state.transactions.filter(t=>t.type==='expense' && new Date(t.date).toDateString()===d.toDateString()).reduce((s,t)=>s+t.amount,0); last7.push(sum); }
+  if(miniChart) miniChart.destroy();
+  miniChart = new Chart(ctx, { type:'bar', data:{ labels:['-6','-5','-4','-3','-2','-1','Сегодня'], datasets:[{ data:last7, backgroundColor:'#ff1744', borderRadius:6 }] }, options:{ responsive:true, maintainAspectRatio:true, plugins:{legend:{display:false}} } });
+}
+
+// TRANSACTIONS
+let currentTxType = 'expense', selectedCategory = null;
+function openAddTx(type) {
+  currentTxType = type; selectedCategory = null;
+  setTxType(type, null);
+  document.getElementById('tx-amount').value = '';
+  document.getElementById('tx-desc').value = '';
+  document.getElementById('tx-date').value = new Date().toISOString().split('T')[0];
+  const sel = document.getElementById('tx-account');
+  sel.innerHTML = state.accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+  const selTo = document.getElementById('tx-account-to');
+  selTo.innerHTML = state.accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+  openModal('modal-add');
+}
+function setTxType(type, el) {
+  currentTxType = type;
+  document.getElementById('transfer-to-group').style.display = type==='transfer'?'block':'none';
+  document.getElementById('cat-group').style.display = type==='transfer'?'none':'block';
+  const cats = CATEGORIES[type==='transfer'?'expense':type];
+  const grid = document.getElementById('cat-grid');
+  grid.innerHTML = cats.map(c => `<div class="cat-btn" onclick="selectCat('${c.id}')"><div class="cat-emoji">${c.emoji}</div><div class="cat-name">${c.name}</div></div>`).join('');
+}
+function selectCat(id) { selectedCategory = id; document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('selected')); event.target.closest('.cat-btn')?.classList.add('selected'); }
+
+function saveTx() {
+  const amount = parseFloat(document.getElementById('tx-amount').value);
+  if(!amount || amount<=0) return showToast('Введите сумму', true);
+  if(currentTxType !== 'transfer' && !selectedCategory) return showToast('Выберите категорию', true);
+  const accountId = document.getElementById('tx-account').value;
+  const acc = state.accounts.find(a=>a.id===accountId);
+  if(!acc) return;
+  
+  const tx = { id:uid(), type:currentTxType, amount, category:selectedCategory, description:document.getElementById('tx-desc').value, account:accountId, date:document.getElementById('tx-date').value };
+  
+  // Корректное изменение баланса
+  if(tx.type === 'expense') acc.balance -= amount;
+  if(tx.type === 'income') acc.balance += amount;
+  if(tx.type === 'transfer') {
+    const toId = document.getElementById('tx-account-to').value;
+    const accTo = state.accounts.find(a=>a.id===toId);
+    if(accTo) { acc.balance -= amount; accTo.balance += amount; tx.accountTo = toId; }
+  }
+  state.transactions.push(tx);
+  save();
+  closeModal('modal-add');
+  renderHome();
+  if(currentPage === 'transactions') renderTransactions();
+  showToast('✅ Добавлено');
+}
+function deleteTx(id) {
+  const t = state.transactions.find(tx=>tx.id===id);
+  if(!t) return;
+  const acc = state.accounts.find(a=>a.id===t.account);
+  if(acc) { if(t.type==='expense') acc.balance += t.amount; if(t.type==='income') acc.balance -= t.amount; if(t.type==='transfer') { acc.balance += t.amount; const toAcc = state.accounts.find(a=>a.id===t.accountTo); if(toAcc) toAcc.balance -= t.amount; } }
+  state.transactions = state.transactions.filter(tx=>tx.id!==id);
+  save(); renderHome(); if(currentPage==='transactions') renderTransactions(); showToast('Удалено');
+}
+function openTxDetail(id) { if(confirm('Удалить операцию?')) deleteTx(id); }
+
+function renderTransactions() {
+  let txs = state.transactions.filter(t => true);
+  const search = document.getElementById('tx-search')?.value.toLowerCase();
+  if(search) txs = txs.filter(t=> (t.description||'').toLowerCase().includes(search));
+  txs.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  document.getElementById('tx-list-full').innerHTML = txs.map(t => `<div class="tx-item" onclick="openTxDetail('${t.id}')"><div class="tx-icon">${CATEGORIES[t.type==='expense'?'expense':'income'].find(c=>c.id===t.category)?.emoji||'💸'}</div><div class="tx-info"><div class="tx-name">${t.description||(t.type==='transfer'?'Перевод':t.category)}</div><div class="tx-meta">${formatDate(t.date)}</div></div><div class="tx-amount ${t.type}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</div></div>`).join('');
+}
+function setTxFilter(f, el) { document.querySelectorAll('#tx-filters .filter-chip').forEach(c=>c.classList.remove('active')); el.classList.add('active'); renderTransactions(); }
+
+// ANALYTICS
+let mainChart, donutChart;
+function renderAnalytics() {
+  const now = new Date();
+  const monthTx = state.transactions.filter(t => new Date(t.date).getMonth()===now.getMonth());
+  const income = monthTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const expense = monthTx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  document.getElementById('an-income').textContent = fmt(income);
+  document.getElementById('an-expense').textContent = fmt(expense);
+  
+  const months = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+  const incData = [], expData = [];
+  for(let i=5;i>=0;i--) { let d=new Date(); d.setMonth(d.getMonth()-i); let txs=state.transactions.filter(t=>new Date(t.date).getMonth()===d.getMonth()); incData.push(txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0)); expData.push(txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0)); }
+  if(mainChart) mainChart.destroy();
+  mainChart = new Chart(document.getElementById('chart-main'), { type:'bar', data:{ labels:months.slice(now.getMonth()-5, now.getMonth()+1), datasets:[{ label:'Доход', data:incData, backgroundColor:'#00e676' }, { label:'Расход', data:expData, backgroundColor:'#ff1744' }] }, options:{ responsive:true, maintainAspectRatio:true } });
+  
+  const expCats = monthTx.filter(t=>t.type==='expense').reduce((acc,t)=>{ acc[t.category]=(acc[t.category]||0)+t.amount; return acc; }, {});
+  if(donutChart) donutChart.destroy();
+  donutChart = new Chart(document.getElementById('chart-donut'), { type:'doughnut', data:{ labels:Object.keys(expCats).map(k=>CATEGORIES.expense.find(c=>c.id===k)?.name||k), datasets:[{ data:Object.values(expCats), backgroundColor:Object.keys(expCats).map(k=>CAT_COLORS[k]||'#888') }] }, options:{ responsive:true } });
+}
+
+// ==================== DEBTS ====================
+function renderDebts() {
+  const list = document.getElementById('debts-list');
+  if(!state.debts.length) { list.innerHTML = '<div class="empty-state">Нет записей о долгах</div>'; }
+  else {
+    list.innerHTML = state.debts.map(d => `
+      <div class="debt-item" onclick="toggleDebtStatus('${d.id}')">
+        <div style="display:flex; justify-content:space-between">
+          <strong>${d.type === 'borrow' ? '📥 Должны мне' : '📤 Я должен'}</strong>
+          <span class="debt-status ${d.type === 'borrow' ? 'borrow' : 'owed'} ${d.status === 'paid' ? 'paid' : ''}">${d.status === 'paid' ? '✅ Возвращено' : (d.type === 'borrow' ? 'Ожидаю' : 'Нужно отдать')}</span>
+        </div>
+        <div style="margin:8px 0"><span style="color:var(--cyan)">${d.person}</span> — ${fmt(d.amount)}</div>
+        <div style="font-size:11px; color:var(--text3)">${formatDate(d.date)} • ${d.note || ''}</div>
+      </div>
+    `).join('');
+  }
+  const totalOwed = state.debts.filter(d=>d.type==='owe' && d.status!=='paid').reduce((s,d)=>s+d.amount,0);
+  const totalBorrow = state.debts.filter(d=>d.type==='borrow' && d.status!=='paid').reduce((s,d)=>s+d.amount,0);
+  document.getElementById('total-debt').textContent = fmt(totalOwed);
+  document.getElementById('total-owed-to-me').textContent = fmt(totalBorrow);
+}
+function openDebtModal() { openModal('modal-debt'); document.getElementById('debt-date').value = new Date().toISOString().split('T')[0]; }
+function saveDebt() {
+  const debt = {
+    id: uid(), type: document.getElementById('debt-type').value, person: document.getElementById('debt-person').value,
+    amount: parseFloat(document.getElementById('debt-amount').value) || 0, date: document.getElementById('debt-date').value,
+    note: document.getElementById('debt-note').value, status: 'pending'
+  };
+  if(!debt.person || !debt.amount) { showToast('Заполните имя и сумму', true); return; }
+  state.debts.push(debt);
+  save();
+  closeModal('modal-debt');
+  renderDebts();
+  showToast('✅ Запись добавлена');
+}
+function toggleDebtStatus(id) {
+  const debt = state.debts.find(d=>d.id===id);
+  if(debt) { debt.status = debt.status === 'paid' ? 'pending' : 'paid'; save(); renderDebts(); showToast(debt.status === 'paid' ? 'Отмечено как возвращённое' : 'Возврат отменён'); }
+}
+
+// ACCOUNTS, PROFILE
+function openAccountsModal() { openModal('modal-accounts'); }
+function saveAccount() {
+  const name = document.getElementById('acc-name').value;
+  if(!name) return;
+  state.accounts.push({ id:uid(), name, type:document.getElementById('acc-type').value, balance:parseFloat(document.getElementById('acc-balance').value)||0, color:'#00e5ff' });
+  save(); closeModal('modal-accounts'); renderHome();
+}
+function openProfileModal() { openModal('modal-profile'); document.getElementById('profile-name').value = state.profile.name; document.getElementById('profile-currency').value = state.profile.currency; }
+function saveProfile() { state.profile.name = document.getElementById('profile-name').value; state.profile.currency = document.getElementById('profile-currency').value; save(); closeModal('modal-profile'); renderHome(); showToast('Профиль сохранён'); }
+
+function exportCSV() {
+  let csv = "Дата,Тип,Сумма,Категория,Описание\n";
+  state.transactions.forEach(t => { csv += `${t.date},${t.type},${t.amount},${t.category},${t.description}\n`; });
+  const blob = new Blob([csv], {type:"text/csv"}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "finflow.csv"; a.click(); showToast('CSV экспортирован');
+}
+function clearAllData() { if(confirm('Удалить всё?')) { state.transactions = []; state.accounts = state.accounts.slice(0,2); save(); renderHome(); showToast('Данные очищены'); } }
+
+// HELPERS
+function openModal(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
+document.querySelectorAll('.modal-backdrop').forEach(b => b.addEventListener('click', e => { if(e.target === b) closeModal(b.id); }));
+let toastTimer; function showToast(msg, isErr=false) { const t = document.getElementById('toast'); t.textContent = msg; t.style.background = isErr ? 'var(--red)' : 'var(--bg3)'; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove('show'), 2000); }
+
+let currentPage = 'home';
+window.onload = () => {
+  load();
+  renderHome();
+  document.getElementById('loader').style.display = 'none';
+};
+</script>
+</body>
+</html>
